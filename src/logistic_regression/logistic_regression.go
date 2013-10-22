@@ -21,6 +21,21 @@ type DataSet struct {
 	samples []Sample
 }
 
+func (d *DataSet) Load(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+  	for scanner.Scan() {
+		
+	}
+	return scanner.Err()	
+}
+
 func Sigmoid(x float64)(y float64) {
 	y = 1 / (1 + math.Exp(-1 * x))
 	return y
