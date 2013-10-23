@@ -11,7 +11,7 @@ type DataSet struct {
 	Samples []Sample
 }
 
-func (d *DataSet) Load(path string) error {
+func (d *DataSet) Load(path string, global_bias_feature_id int64) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -47,6 +47,9 @@ func (d *DataSet) Load(path string) error {
 				feature := Feature{feature_id, feature_value}
 				sample.Features = append(sample.Features, feature)
 			}
+		}
+		if global_bias_feature_id >= 0{
+			sample.Features = append(sample.Features, Feature{global_bias_feature_id, 1.0})
 		}
 		d.Samples = append(d.Samples, sample)	
 	}
