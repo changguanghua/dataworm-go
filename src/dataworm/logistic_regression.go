@@ -1,5 +1,9 @@
 package dataworm
 
+import(
+	"sync"
+	"fmt"
+)
 
 type LogisticRegressionParams struct {
 	LearningRate float64
@@ -22,7 +26,7 @@ func LogisticRegressionPredict(sample Sample, model map[int64] float64) (ret flo
 func LogisticRegressionTrain(dataset DataSet, params LogisticRegressionParams) (model map[int64]float64) {
 	model = make(map[int64]float64)
 	for step := 0; step < params.Steps; step++ {
-		for _, sample := range dataset.Samples {
+		for sample := range dataset.Samples {
 			prediction := LogisticRegressionPredict(sample, model)
 			err := sample.LabelDoubleValue() - prediction
 			for _, feature := range sample.Features {
@@ -40,24 +44,50 @@ func LogisticRegressionTrain(dataset DataSet, params LogisticRegressionParams) (
 
 func LogisticRegression(train_path string, test_path string, params LogisticRegressionParams) (auc float64, err error){
 	train_dataset := DataSet{}
-	err = train_dataset.Load(train_path, params.GlobalBiasFeatureId)
+	train_dataset.Samples = make(chan Sample, 1000)
+	
+	var wait sync.WaitGroup
+	wait.Add(2)
+	go func(){
+		err = train_dataset.Load(train_path, params.GlobalBiasFeatureId, params.Steps)
+		wait.Done()
+	}()
+	
 	if err != nil{
 		return 0.5, err
 	}
 	
+	var model map[int64]float64
+	go func(){
+		model = LogisticRegressionTrain(train_dataset, params)
+		wait.Done()
+	}()
+	
+	wait.Wait()
+	
+	wait.Add(2)
 	test_dataset := DataSet{}
-	err = test_dataset.Load(test_path, params.GlobalBiasFeatureId)
+	test_dataset.Samples = make(chan Sample, 1000)
+	go func(){
+		err = test_dataset.Load(test_path, params.GlobalBiasFeatureId, params.Steps)
+		wait.Done()
+	}()
 	if err != nil{
 		return 0.5, err
 	}
 	
-	model := LogisticRegressionTrain(train_dataset, params)
+	fmt.Println(len(model))
 	
 	predictions := []LabelPrediction{}
-	for _, sample := range test_dataset.Samples {
-		prediction := LogisticRegressionPredict(sample, model)
-		predictions = append(predictions, LabelPrediction{Label: sample.Label, Prediction: prediction})
-	}
+	go func(){
+		for sample := range test_dataset.Samples {
+			prediction := LogisticRegressionPredict(sample, model)
+			predictions = append(predictions, LabelPrediction{Label: sample.Label, Prediction: prediction})
+		}
+		wait.Done()
+	}()
+	
+	wait.Wait()
 	
 	auc = AUC(predictions)
 	return auc, nil

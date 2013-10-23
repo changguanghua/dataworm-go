@@ -1,6 +1,6 @@
 package dataworm
 
-
+/*
 type TreeNode struct{
 	left, right, depth int
 	prediction float64
@@ -76,3 +76,4 @@ func SingleRandomDTBuild(dataset DataSet, feature_splits []FeatureSplit) Tree {
 	
 	return tree
 }
+*/
