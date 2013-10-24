@@ -14,6 +14,17 @@ type MapBasedSample struct {
 	Label int16	
 }
 
-func (s *MapBasedSample) LabelDoubleValue() float64{
+func (s *MapBasedSample) LabelDoubleValue() float64 {
 	return float64(s.Label)
 }
+
+func (s *Sample) ToMapBasedSample() MapBasedSample {
+	ret := MapBasedSample{}
+	ret.Features = make(map[int64]float64)
+	ret.Label = s.Label
+	for _, feature := range s.Features{
+		ret.Features[feature.Id] = feature.Value
+	}
+	return ret	
+}
+
