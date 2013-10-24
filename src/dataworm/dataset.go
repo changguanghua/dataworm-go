@@ -42,9 +42,12 @@ func (d *DataSet) Load(path string, global_bias_feature_id int64, steps int) err
 					if err != nil {
 						break
 					}
-					feature_value, err := strconv.ParseFloat(kv[1], 64)
-					if err != nil {
-						break
+					feature_value := 1.0
+					if len(kv) > 1 {
+						feature_value, err = strconv.ParseFloat(kv[1], 64)
+						if err != nil {
+							break
+						}
 					}
 					feature := Feature{feature_id, feature_value}
 					sample.Features = append(sample.Features, feature)
